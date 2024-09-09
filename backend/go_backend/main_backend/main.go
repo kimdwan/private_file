@@ -29,6 +29,7 @@ func main() {
 
 	routes.TestRouter(router)
 	routes.UserRouter(router)
+	routes.AuthRouter(router)
 
 	router.Run(port)
 }

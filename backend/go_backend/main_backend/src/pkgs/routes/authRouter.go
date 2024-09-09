@@ -1,0 +1,17 @@
+package routes
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/kimdwan/private_file/src/middlewares"
+	"github.com/kimdwan/private_file/src/pkgs/controllers"
+)
+
+func AuthRouter(router *gin.Engine) {
+
+	authrouter := router.Group("auth")
+	authrouter.Use(middlewares.CheckJwtMiddleware())
+
+	// 기본 서비스
+	authrouter.GET("getprofile", controllers.AuthGetProfileImgController)
+
+}
