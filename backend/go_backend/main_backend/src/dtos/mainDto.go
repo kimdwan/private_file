@@ -39,3 +39,9 @@ func (p Payload) Make_jwttoken(jwt_secret string, jwt_time int) (string, error) 
 
 	return jwt_token, nil
 }
+
+// 이미지와 관련된 데이터 교환시 사용됨
+type ImageDto struct {
+	Imagebase64 string `json:"imagebase64"`
+	Imagetype   string `json:"imagetype"`
+}

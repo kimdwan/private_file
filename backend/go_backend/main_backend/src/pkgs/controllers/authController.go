@@ -9,22 +9,29 @@ import (
 	"github.com/kimdwan/private_file/src/pkgs/services"
 )
 
+// 유저의 프로필 이미지를 주는 컨트롤러
 func AuthGetProfileImgController(ctx *gin.Context) {
 
 	var (
-		payload *dtos.Payload
-		err     error
+		payload     *dtos.Payload
+		imageDto    dtos.ImageDto
+		errorStatus int
+		err         error
 	)
 
+	// payload를 파싱함
 	if payload, err = services.AuthParsePayloadByteService(ctx); err != nil {
 		fmt.Println(err.Error())
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Println(payload)
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "사진 보냈습니다.",
-	})
+	// image dto 파싱하기
+	if errorStatus, err = services.AuthGetProfileImgService(payload, &imageDto); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
 
+	ctx.JSON(http.StatusOK, imageDto)
 }
