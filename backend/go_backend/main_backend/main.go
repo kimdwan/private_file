@@ -11,6 +11,8 @@ import (
 
 func init() {
 	settings.LoadDotenv()
+	settings.LoadDatabase()
+	settings.MigrateDatabase()
 }
 
 func main() {
