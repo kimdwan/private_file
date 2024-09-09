@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-// 유저의 로그인인과 관련됨
+// 유저의 회원가입과 관련됨
 type UserSignUp struct {
 	Email        string `json:"email" validate:"required,email"`
 	Password     string `json:"password" validate:"required,min=4,max=16"`
@@ -32,4 +32,10 @@ func (u UserSignUp) Check_password() error {
 		return errors.New("비밀번호는 반드시 영문자, 숫자, 특수문자를 한개 이상 포함해야 합니다")
 	}
 	return nil
+}
+
+// 유저의 로그인과 관련됨
+type UserLogin struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=4,max=16"`
 }

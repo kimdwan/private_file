@@ -12,15 +12,15 @@ import (
 
 type User struct {
 	gorm.Model
-	User_id         uuid.UUID `gorm:"type:uuid;unique;"`
-	Email           string    `gorm:"type:varchar(255);unique;not null;"`
-	Hash            []byte    `gorm:"type:bytea;not null;"`
-	Nickname        string    `gorm:"type:varchar(255);unique;not null;"`
-	Term_agree_3    bool      `gorm:"type:boolean;not null;"`
-	Profile_img     *string   `gorm:"type:varchar(1000);"`
-	Access_token    *string   `gorm:"type:varchar(1000);unique"`
-	Refresh_token   *string   `gorm:"type:varchar(1000);unique"`
-	Computer_number *string   `gorm:"type:uuid;unique"`
+	User_id         uuid.UUID  `gorm:"type:uuid;unique;"`
+	Email           string     `gorm:"type:varchar(255);unique;not null;"`
+	Hash            []byte     `gorm:"type:bytea;not null;"`
+	Nickname        string     `gorm:"type:varchar(255);unique;not null;"`
+	Term_agree_3    bool       `gorm:"type:boolean;not null;"`
+	Profile_img     *string    `gorm:"type:varchar(1000);"`
+	Access_token    *string    `gorm:"type:varchar(1000);unique"`
+	Refresh_token   *string    `gorm:"type:varchar(1000);unique"`
+	Computer_number *uuid.UUID `gorm:"type:uuid;unique"`
 
 	File []File `gorm:"foreignKey:user_id;references:user_id;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
