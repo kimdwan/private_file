@@ -13,5 +13,11 @@ func AuthRouter(router *gin.Engine) {
 
 	// 기본 서비스
 	authrouter.GET("getprofile", controllers.AuthGetProfileImgController)
+	authrouter.GET("getnickname", controllers.AuthGetNickNameController)
+	authrouter.POST("upload/profile", controllers.AuthUploadProfileController)
+
+	// 파일 관련 서비스
+	authfilerouter := authrouter.Group("file")
+	authfilerouter.POST("getfiles")
 
 }
