@@ -80,5 +80,48 @@ func AuthUploadProfileController(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "프로필이 업데이트 되었습니다.",
 	})
+}
+
+// 파일 내용 가져오기
+func AuthGetFileListController(ctx *gin.Context) {
+	var (
+		payload         *dtos.Payload
+		fileNumberDto   *dtos.FileNumberDto
+		fileListDtos    []dtos.FileDataDto
+		totalFileNumber int
+		errorStatus     int
+		err             error
+	)
+
+	// payload 가져오기
+	if payload, err = services.AuthParsePayloadByteService(ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// 클라이언트에서 가져오기
+	if fileNumberDto, err = services.AuthParseAndBodyService[dtos.FileNumberDto](ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// 데이터 리스트 가져오기
+	if errorStatus, err = services.AuthGetFileListService(payload, fileNumberDto, &fileListDtos, &totalFileNumber); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"file_datas":   fileListDtos,
+		"total_number": totalFileNumber,
+	})
+
+}
+
+// 파일을 검색해서 가져오기
+func AuthSearchFileController(ctx *gin.Context) {
 
 }

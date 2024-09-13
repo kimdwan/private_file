@@ -13,9 +13,11 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/kimdwan/private_file/models"
 	"github.com/kimdwan/private_file/settings"
 	"github.com/kimdwan/private_file/src/dtos"
@@ -41,6 +43,29 @@ func AuthParsePayloadByteService(ctx *gin.Context) (*dtos.Payload, error) {
 	}
 
 	return &payload, nil
+}
+
+// auth에서 원하는 데이터 파싱해줌
+func AuthParseAndBodyService[T dtos.FileNumberDto](ctx *gin.Context) (*T, error) {
+	var (
+		body T
+		err  error
+	)
+
+	// 폼 가져오기
+	if err = ctx.ShouldBindBodyWithJSON(&body); err != nil {
+		fmt.Println("시스템 오류: ", err.Error())
+		return nil, errors.New("(json) 클라이언트 폼을 파싱하는데 오류가 발생했습니다")
+	}
+
+	// 폼 검증하기
+	validate := validator.New()
+	if err = validate.Struct(body); err != nil {
+		fmt.Println("시스템 오류: ", err.Error())
+		return nil, errors.New("(validate) 클라이언트 폼을 파싱하는데 오류가 발생했습니다")
+	}
+
+	return &body, nil
 }
 
 // 유저의 프로필 이미지를 주는 함수
@@ -252,4 +277,101 @@ func AuthUploadProfileResetDatabaseFunc(c context.Context, db *gorm.DB, payload 
 	}
 
 	return nil
+}
+
+// 파일 리스트 가져오기
+func AuthGetFileListService(payload *dtos.Payload, fileNumberDto *dtos.FileNumberDto, fileListDtos *[]dtos.FileDataDto, totalFileNumber *int) (int, error) {
+
+	var (
+		db    *gorm.DB = settings.DB
+		files []models.File
+		err   error
+	)
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+
+	// 데이터 정보 가져오기
+	if err = AuthGetFileListFindDatabaseFunc(c, db, &files, payload, totalFileNumber); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// 갯수가 0개면 넘어가기
+	if *totalFileNumber == 0 {
+		return 0, nil
+	}
+
+	// 파일 가져오기
+	if err = AuthGetFileListGetFileAndSummaryFunc(&files, fileListDtos, fileNumberDto, totalFileNumber); err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	return 0, nil
+}
+
+// 데이터 베이스에서 유저 찾기
+func AuthGetFileListFindDatabaseFunc(c context.Context, db *gorm.DB, files *[]models.File, payload *dtos.Payload, totalFileNumber *int) error {
+
+	// 파일 데이터 찾기
+	if result := db.WithContext(c).Where("user_id = ?", payload.User_id).Order("created_at DESC").Find(files); result.Error != nil {
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			fmt.Println("시스템 오류: ", result.Error.Error())
+			return errors.New("유저 아이디에 해당하는 파일 데이터를 찾는데 오류가 발생했습니다")
+		}
+	}
+
+	// 전체 갯수 가져오기
+	*totalFileNumber = len(*files)
+
+	return nil
+}
+
+// 파일 가져오고 정리하기
+func AuthGetFileListGetFileAndSummaryFunc(files *[]models.File, fileListDtos *[]dtos.FileDataDto, fileNumberDto *dtos.FileNumberDto, totalFileNumber *int) error {
+	var (
+		initNumber      int = (fileNumberDto.File_number - 1) * 10
+		last_number_ex1 int = (fileNumberDto.File_number) * 10
+		last_number     int
+	)
+
+	// 숫자 오류를 막기 위한 확인 방법
+	if *totalFileNumber <= initNumber {
+		return errors.New("클라이언트에서 보낸 숫자 데이터가 문제가 있습니다")
+	}
+
+	if last_number_ex1 < *totalFileNumber {
+		last_number = last_number_ex1
+	} else {
+		last_number = *totalFileNumber
+	}
+
+	want_file_datas := (*files)[initNumber:last_number]
+
+	// 데이터를 배정하기
+	var (
+		wg    sync.WaitGroup
+		mutex sync.Mutex
+	)
+	wg.Add(1)
+	go AuthGetFileListSupplySummaryFunc(&wg, &mutex, &want_file_datas, fileListDtos)
+	wg.Wait()
+
+	return nil
+}
+
+// 데이터를 빠르게 배정하기 위해 준비한 함수
+func AuthGetFileListSupplySummaryFunc(wg *sync.WaitGroup, mutex *sync.Mutex, want_files *[]models.File, fileListDtos *[]dtos.FileDataDto) {
+	defer wg.Done()
+
+	for _, want_file := range *want_files {
+		var (
+			fileListDto dtos.FileDataDto
+		)
+		mutex.Lock()
+		fileListDto.File_id = want_file.File_id
+		fileListDto.File_name = want_file.File_title
+		fileListDto.File_comment = want_file.File_commnet
+		*fileListDtos = append(*fileListDtos, fileListDto)
+		mutex.Unlock()
+	}
+
 }
