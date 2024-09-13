@@ -450,6 +450,7 @@ func AuthSearchFileGetFilesFunc(files *[]models.File, file_datas *[]dtos.FileDat
 	return nil
 }
 
+// 파일 확인하는데 필요한 함수
 func AuthSearchFileSupplyGetFilesFunc(wg *sync.WaitGroup, mutex *sync.Mutex, want_files *[]models.File, file_datas *[]dtos.FileDataDto) {
 	defer wg.Done()
 
@@ -465,4 +466,114 @@ func AuthSearchFileSupplyGetFilesFunc(wg *sync.WaitGroup, mutex *sync.Mutex, wan
 		mutex.Unlock()
 	}
 
+}
+
+// formData파싱하기
+func AuthCreateFileService(ctx *gin.Context, payload *dtos.Payload) (int, error) {
+	var (
+		fileDataDto dtos.FileDataDto
+		file_names  string
+		errorStatus int
+		err         error
+	)
+
+	// 파일에서 데이터를 추출하고 파일을 저장한다
+	if errorStatus, err = AuthCreateFileGetFormDataFunc(ctx, payload, &fileDataDto, &file_names); err != nil {
+		return errorStatus, err
+	}
+
+	// 데이터를 저장한다
+	var (
+		db *gorm.DB = settings.DB
+	)
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+	if err = AuthCreateFileSaveDataFunc(c, db, payload, &fileDataDto, &file_names); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return 0, nil
+}
+
+// 파일에서 데이터를 추출하고 파일을 저장한다
+func AuthCreateFileGetFormDataFunc(ctx *gin.Context, payload *dtos.Payload, fileDataDto *dtos.FileDataDto, file_names *string) (int, error) {
+
+	// 폼데이터 파싱하기
+	formDatas, err := ctx.MultipartForm()
+	if err != nil {
+		fmt.Println("시스템 오류: ", err.Error())
+		return http.StatusBadRequest, errors.New("폼 데이터를 파싱하는데 오류가 발생했습니다")
+	}
+
+	// 파일 정보 파싱하고 대입하기
+	var (
+		clientData map[string]string = map[string]string{}
+		json_names                   = []string{
+			"file_name",
+			"file_comment",
+		}
+	)
+	for idx, formName := range []string{"title", "comment"} {
+		if fromValue, ok := formDatas.Value[formName]; ok && len(fromValue) > 0 {
+			clientData[json_names[idx]] = fromValue[0]
+		}
+	}
+	file_datas_byte, err := json.Marshal(&clientData)
+	if err != nil {
+		fmt.Println(err.Error())
+		return http.StatusInternalServerError, errors.New("파일 데이터를 바이트화 하는데 오류가 발생했습니다")
+	}
+	if err = json.Unmarshal(file_datas_byte, fileDataDto); err != nil {
+		fmt.Println("시스템 오류: ", err.Error())
+		return http.StatusInternalServerError, errors.New("파일 데이터를 역직렬화 하는데 오류가 발생했습니다")
+	}
+	fileDataDto.MakeFileId()
+
+	// 파일 데이터 파싱하기
+	if formFile, ok := formDatas.File["file"]; ok && len(formFile) > 0 {
+		formFileData := formFile[0]
+
+		// 파일 크기 확인
+		if formFileData.Size > 100*1024*1024 {
+			return http.StatusBadRequest, errors.New("파일 데이터는 100mb를 넘을수 없습니다")
+		}
+
+		// 파일 이름 배정
+		*file_names = formFileData.Filename
+
+		// 파일 저장
+		var (
+			file_server      string = os.Getenv("FILE_SERVER_PATH")
+			file_data_server string = os.Getenv("FILE_DATA_SERVER_PATH")
+		)
+		file_path := filepath.Join(file_server, file_data_server, payload.User_id.String(), fileDataDto.File_id.String(), *file_names)
+
+		if err = ctx.SaveUploadedFile(formFileData, file_path); err != nil {
+			fmt.Println("시스템 오류: ", err.Error())
+			return http.StatusInternalServerError, errors.New("파일을 저장하는데 오류가 발생했습니다")
+		}
+	} else {
+		return http.StatusBadRequest, errors.New("폼 데이터에 file 데이터가 존재하지 않습니다")
+	}
+
+	return 0, nil
+}
+
+// 파일 데이터 배이스를 저장하는 로직
+func AuthCreateFileSaveDataFunc(c context.Context, db *gorm.DB, paylaod *dtos.Payload, fileDataDto *dtos.FileDataDto, file_names *string) error {
+	var (
+		file models.File
+	)
+
+	file.File_id = fileDataDto.File_id
+	file.File_title = fileDataDto.File_name
+	file.File_commnet = fileDataDto.File_comment
+	file.File_path = *file_names
+	file.User_id = paylaod.User_id
+	if result := db.WithContext(c).Create(&file); result.Error != nil {
+		fmt.Println("시스템 오류: ", result.Error.Error())
+		return errors.New("새로운 파일 데이터를 생성하는데 오류가 발생했습니다")
+	}
+
+	return nil
 }

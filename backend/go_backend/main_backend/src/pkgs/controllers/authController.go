@@ -158,3 +158,30 @@ func AuthSearchFileController(ctx *gin.Context) {
 		"total_number": totalFileNumbers,
 	})
 }
+
+func AuthCreateFileController(ctx *gin.Context) {
+	var (
+		payload     *dtos.Payload
+		errorStatus int
+		err         error
+	)
+
+	// payload 파싱하기
+	if payload, err = services.AuthParsePayloadByteService(ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// 데이터 저장
+	if errorStatus, err = services.AuthCreateFileService(ctx, payload); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "데이터가 업로드 되었습니다.",
+	})
+
+}

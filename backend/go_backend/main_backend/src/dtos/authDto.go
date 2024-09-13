@@ -4,9 +4,18 @@ import "github.com/google/uuid"
 
 // 파일 리스트에 들어가는 데이터
 type FileDataDto struct {
-	File_id      uuid.UUID `json:"file_id"`
+	File_id      uuid.UUID `json:"file_id,omitempty"`
 	File_name    string    `json:"file_name"`
 	File_comment string    `json:"file_comment"`
+}
+
+// 파일 아이디를 만들고 싶으면 이렇게 만들면 됨
+type FileDataDtoInterFace interface {
+	MakeFileId()
+}
+
+func (f *FileDataDto) MakeFileId() {
+	f.File_id = uuid.New()
 }
 
 // 파일의 순서를 가져오는 데이터

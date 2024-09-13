@@ -15,7 +15,9 @@ type File struct {
 }
 
 func (f *File) BeforeCreate(tx *gorm.DB) error {
-	f.User_id = uuid.New()
+	if f.File_id == uuid.Nil {
+		f.File_id = uuid.New()
+	}
 
 	return nil
 }
