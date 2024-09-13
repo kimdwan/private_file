@@ -159,6 +159,7 @@ func AuthSearchFileController(ctx *gin.Context) {
 	})
 }
 
+// 파일을 생성하는 로직
 func AuthCreateFileController(ctx *gin.Context) {
 	var (
 		payload     *dtos.Payload
@@ -184,4 +185,84 @@ func AuthCreateFileController(ctx *gin.Context) {
 		"message": "데이터가 업로드 되었습니다.",
 	})
 
+}
+
+// 파일의 디테일한 데이터를 가져오는 로직
+func AuthGetFileDetailController(ctx *gin.Context) {
+	var (
+		fileIdDto   *dtos.FileIdDto
+		fileDatas   *dtos.FileDetailDataDto
+		errorStatus int
+		err         error
+	)
+
+	// 파일 아이디 가져오기
+	if fileIdDto, err = services.AuthParseAndBodyService[dtos.FileIdDto](ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// 파일의 세부정보를 가져오는 로직
+	if errorStatus, err = services.AuthGetFileDetailService(fileIdDto, fileDatas); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, fileDatas)
+}
+
+// 파일을 다운로드 하는 로직
+func AuthDownloadFileController(ctx *gin.Context) {
+	var (
+		fileIdDto   *dtos.FileIdDto
+		errorStatus int
+		err         error
+	)
+
+	// 파일의 아이디를 가져오는 로직
+	if fileIdDto, err = services.AuthParseAndBodyService[dtos.FileIdDto](ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// 파일을 다운로드 하는 로직
+	if errorStatus, err = services.AuthDownloadFileService(ctx, fileIdDto); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "파일을 다운로드 하였습니다.",
+	})
+}
+
+// 파일을 삭제하는 로직
+func AuthRemoveFileController(ctx *gin.Context) {
+	var (
+		fileIdDto   *dtos.FileIdDto
+		errorStatus int
+		err         error
+	)
+
+	// 파일 아이디를 가져오는 로직
+	if fileIdDto, err = services.AuthParseAndBodyService[dtos.FileIdDto](ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// 파일을 삭제하는 로직
+	if errorStatus, err = services.AuthRemoveFileService(fileIdDto); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "파일이 삭제되었습니다.",
+	})
 }

@@ -46,7 +46,7 @@ func AuthParsePayloadByteService(ctx *gin.Context) (*dtos.Payload, error) {
 }
 
 // auth에서 원하는 데이터 파싱해줌
-func AuthParseAndBodyService[T dtos.FileNumberDto | dtos.FileSearchNameDto](ctx *gin.Context) (*T, error) {
+func AuthParseAndBodyService[T dtos.FileNumberDto | dtos.FileSearchNameDto | dtos.FileIdDto](ctx *gin.Context) (*T, error) {
 	var (
 		body T
 		err  error
@@ -573,6 +573,188 @@ func AuthCreateFileSaveDataFunc(c context.Context, db *gorm.DB, paylaod *dtos.Pa
 	if result := db.WithContext(c).Create(&file); result.Error != nil {
 		fmt.Println("시스템 오류: ", result.Error.Error())
 		return errors.New("새로운 파일 데이터를 생성하는데 오류가 발생했습니다")
+	}
+
+	return nil
+}
+
+// 파일의 디테일한 부분을 가져오는 함수
+func AuthGetFileDetailService(fileIdDto *dtos.FileIdDto, detailFileDatas *dtos.FileDetailDataDto) (int, error) {
+	var (
+		db *gorm.DB = settings.DB
+	)
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+
+	// 파일의 세부정보를 가져오는 로직
+	if errorStatus, err := AuthGetFileDetailGetDataFunc(c, db, fileIdDto, detailFileDatas); err != nil {
+		return errorStatus, err
+	}
+
+	return 0, nil
+}
+
+// 파일의 디테일한 부분을 가져오는 로직
+func AuthGetFileDetailGetDataFunc(c context.Context, db *gorm.DB, fileIdDto *dtos.FileIdDto, detailFileDatas *dtos.FileDetailDataDto) (int, error) {
+	var (
+		file models.File
+	)
+
+	// 데이터 찾기
+	if result := db.WithContext(c).Where("file_id = ?", fileIdDto.File_id).First(&file); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return http.StatusBadRequest, errors.New("클라이언트에서 보낸 file_id는 존재하지 않습니다")
+		} else {
+			fmt.Println("시스템 오류: ", result.Error.Error())
+			return http.StatusInternalServerError, errors.New("데이터 베이스에서 파일 아이디에 해당하는 데이터를 찾는데 오류가 발생했습니다")
+		}
+	}
+
+	// 데이터 옮기기
+	detailFileDatas.File_title = file.File_title
+	detailFileDatas.File_comment = file.File_commnet
+	detailFileDatas.File_path = file.File_path
+
+	return 0, nil
+}
+
+// 파일을 다운로드 하는 로직
+func AuthDownloadFileService(ctx *gin.Context, fileIdDto *dtos.FileIdDto) (int, error) {
+
+	var (
+		db          *gorm.DB = settings.DB
+		file        models.File
+		errorStatus int
+		err         error
+	)
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+
+	// 파일의 주소를 가져오기 위함
+	if errorStatus, err = AuthDownloadFileGetFileDataFunc(c, db, &file, fileIdDto); err != nil {
+		return errorStatus, err
+	}
+
+	// 파일을 다운로드 함
+	AuthDownloadFileStartDataFunc(ctx, &file)
+
+	return 0, nil
+}
+
+// 파일 데이터의 주소를 일단 가져온다
+func AuthDownloadFileGetFileDataFunc(c context.Context, db *gorm.DB, file *models.File, fileIdDto *dtos.FileIdDto) (int, error) {
+
+	// 데이터 에서 찾아보기
+	if result := db.WithContext(c).Where("file_id = ?", fileIdDto.File_id).First(file); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return http.StatusBadRequest, errors.New("클라이언트에서 보낸 파일 아이디를 다시 확인하세요")
+		} else {
+			fmt.Println("시스템 오류: ", result.Error.Error())
+			return http.StatusInternalServerError, errors.New("데이터 베이스에서 파일 아이디에 해당하는 데이터를 찾는데 오류가 발생했습니다")
+		}
+	}
+
+	return 0, nil
+}
+
+// 파일을 다운로드 함
+func AuthDownloadFileStartDataFunc(ctx *gin.Context, file *models.File) {
+
+	var (
+		file_server      string = os.Getenv("FILE_SERVER_PATH")
+		file_data_server string = os.Getenv("FILE_DATA_SERVER_PATH")
+	)
+	data_path := filepath.Join(file_server, file_data_server, file.User_id.String(), file.File_id.String(), file.File_path)
+
+	ctx.FileAttachment(data_path, file.File_path)
+
+}
+
+// 파일을 삭제하는 로직
+func AuthRemoveFileService(fileIdDto *dtos.FileIdDto) (int, error) {
+
+	var (
+		db          *gorm.DB = settings.DB
+		file        models.File
+		errorStatus int
+		err         error
+	)
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+
+	// 파일 찾는 로직
+	if errorStatus, err = AuthRemoveFileFindDatabaseFunc(c, db, &file, fileIdDto); err != nil {
+		return errorStatus, err
+	}
+
+	// 파일을 옮기고 삭제 테이블에 추가함
+	if err = AuthRemoveFileMovePathFunc(c, db, &file); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// 파일을 삭제 함
+	if err = AuthRemoveFileDeleteFunc(c, db, &file); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return 0, nil
+}
+
+// 파일을 찾는 로직
+func AuthRemoveFileFindDatabaseFunc(c context.Context, db *gorm.DB, files *models.File, fileIdDto *dtos.FileIdDto) (int, error) {
+
+	// 데이터 찾기
+	if result := db.WithContext(c).Where("file_id = ?", fileIdDto.File_id).First(files); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return http.StatusBadRequest, errors.New("클라이언트에서 보낸 파일 아이디가 문제가 있습니다")
+		} else {
+			fmt.Println("시스템 오류: ", result.Error.Error())
+			return http.StatusInternalServerError, errors.New("데이터 베이스에서 파일아이디에 해당하는 데이터를 찾는데 오류가 발생했습니다")
+		}
+	}
+
+	return 0, nil
+}
+
+// 파일 옮기고 삭제하기
+func AuthRemoveFileMovePathFunc(c context.Context, db *gorm.DB, files *models.File) error {
+
+	var (
+		file_server             string = os.Getenv("FILE_SERVER_PATH")
+		file_data_server        string = os.Getenv("FILE_DATA_SERVER_PATH")
+		file_data_remove_server string = os.Getenv("FILE_REMOVE_DATA_SERVER_PATH")
+	)
+	origin_file_path := filepath.Join(file_server, file_data_server, files.User_id.String(), files.File_id.String(), files.File_path)
+	new_file_path := filepath.Join(file_server, file_data_remove_server, files.User_id.String(), files.File_id.String(), files.File_path)
+
+	if err := os.Rename(origin_file_path, new_file_path); err != nil {
+		fmt.Println("시스템 오류: ", err.Error())
+		return errors.New("파일을 옮기는데 오류가 발생했습니다")
+	}
+
+	// 삭제 데이터 베이스에 추가
+	var (
+		remove_file models.DeleteFile
+	)
+	remove_file.User_id = files.User_id
+	remove_file.File_id = files.File_id
+	remove_file.File_title = files.File_title
+	remove_file.File_comment = files.File_commnet
+	remove_file.File_path = files.File_path
+	if result := db.WithContext(c).Create(&remove_file); result.Error != nil {
+		fmt.Println("시스템 오류: ", result.Error.Error())
+		return errors.New("삭제 데이터 베이스에 데이터를 추가하는데 오류가 발생했습니다")
+	}
+
+	return nil
+}
+
+// 본 데이터 베이스에서 파일을 삭제함
+func AuthRemoveFileDeleteFunc(c context.Context, db *gorm.DB, file *models.File) error {
+
+	if result := db.WithContext(c).Unscoped().Delete(file); result.Error != nil {
+		fmt.Println("시스템 오류: ", result.Error.Error())
+		return errors.New("오리지널 파일을 삭제하는데 오류가 발생했습니다")
 	}
 
 	return nil

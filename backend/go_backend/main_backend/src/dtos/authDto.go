@@ -28,3 +28,15 @@ type FileSearchNameDto struct {
 	File_title  string `json:"file_title" validate:"required"`
 	File_number int    `json:"file_number" validate:"required,min=1,required"`
 }
+
+// 파일 아이디를 가져오는 로직
+type FileIdDto struct {
+	File_id uuid.UUID `json:"file_id" validate:"required,uuid"`
+}
+
+// 파일 데이터 가져오는 로직
+type FileDetailDataDto struct {
+	File_title   string `json:"file_title"`
+	File_comment string `json:"file_comment"`
+	File_path    string `json:"file_path"`
+}

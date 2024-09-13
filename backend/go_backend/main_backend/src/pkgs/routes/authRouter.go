@@ -21,4 +21,7 @@ func AuthRouter(router *gin.Engine) {
 	authfilerouter.POST("getfiles", controllers.AuthGetFileListController)
 	authfilerouter.POST("searchfiles", controllers.AuthSearchFileController)
 	authfilerouter.POST("createfile", controllers.AuthCreateFileController)
+	authfilerouter.POST("getdetailfile", controllers.AuthGetFileDetailController)
+	authfilerouter.POST("downloadfile", controllers.AuthDownloadFileController)
+	authfilerouter.POST("deletefile", controllers.AuthRemoveFileController)
 }
