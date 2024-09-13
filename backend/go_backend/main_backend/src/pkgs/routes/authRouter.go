@@ -19,6 +19,6 @@ func AuthRouter(router *gin.Engine) {
 	// 파일 관련 서비스
 	authfilerouter := authrouter.Group("file")
 	authfilerouter.POST("getfiles", controllers.AuthGetFileListController)
-	authfilerouter.POST("searchfiles")
+	authfilerouter.POST("searchfiles", controllers.AuthSearchFileController)
 
 }

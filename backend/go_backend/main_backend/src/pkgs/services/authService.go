@@ -46,7 +46,7 @@ func AuthParsePayloadByteService(ctx *gin.Context) (*dtos.Payload, error) {
 }
 
 // auth에서 원하는 데이터 파싱해줌
-func AuthParseAndBodyService[T dtos.FileNumberDto](ctx *gin.Context) (*T, error) {
+func AuthParseAndBodyService[T dtos.FileNumberDto | dtos.FileSearchNameDto](ctx *gin.Context) (*T, error) {
 	var (
 		body T
 		err  error
@@ -371,6 +371,97 @@ func AuthGetFileListSupplySummaryFunc(wg *sync.WaitGroup, mutex *sync.Mutex, wan
 		fileListDto.File_name = want_file.File_title
 		fileListDto.File_comment = want_file.File_commnet
 		*fileListDtos = append(*fileListDtos, fileListDto)
+		mutex.Unlock()
+	}
+
+}
+
+// 파일에서 이름을 검색후 리스트 가져오기
+func AuthSearchFileService(payload *dtos.Payload, fileSearchDto *dtos.FileSearchNameDto, file_datas *[]dtos.FileDataDto, totalFileNumbers *int) (int, error) {
+	var (
+		db    *gorm.DB = settings.DB
+		files []models.File
+		err   error
+	)
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+
+	// 파일 이름 확인하는 로직
+	if err = AuthSearchFileGetFileDatasFunc(c, db, payload, fileSearchDto, &files, totalFileNumbers); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// 갯수가 0개면 넘어간다
+	if *totalFileNumbers == 0 {
+		return 0, nil
+	}
+
+	// 데이터 가져오기
+	if err = AuthSearchFileGetFilesFunc(&files, file_datas, fileSearchDto, totalFileNumbers); err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	return 0, nil
+}
+
+// 파일 이름을 확인하는 로직
+func AuthSearchFileGetFileDatasFunc(c context.Context, db *gorm.DB, payload *dtos.Payload, fileSearchDto *dtos.FileSearchNameDto, files *[]models.File, totalFileNumbers *int) error {
+
+	if result := db.WithContext(c).Where("user_id = ? AND file_title LIKE ?", payload.User_id, fileSearchDto.File_title+"%").Order("created_at DESC").Find(files); result.Error != nil {
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			fmt.Println("시스템 오류: ", result.Error.Error())
+			return errors.New("데이터 베이스에서 원하는 데이터를 찾는데 오류가 발생했습니다")
+		}
+	}
+
+	*totalFileNumbers = len(*files)
+	return nil
+}
+
+// 파일 확인후 보내주기
+func AuthSearchFileGetFilesFunc(files *[]models.File, file_datas *[]dtos.FileDataDto, fileSearchDto *dtos.FileSearchNameDto, totalFileNumbers *int) error {
+	var (
+		initNumber    int = (fileSearchDto.File_number - 1) * 10
+		lastNumber_ex int = (fileSearchDto.File_number) * 10
+		lastNumber    int
+	)
+
+	if *totalFileNumbers <= initNumber {
+		return errors.New("클라이언트 에서 보낸 숫자 데이터를 다시 확인하세요")
+	}
+
+	// 갯수확인
+	if *totalFileNumbers > lastNumber_ex {
+		lastNumber = lastNumber_ex
+	} else {
+		lastNumber = *totalFileNumbers
+	}
+
+	// 데이터 가져오기
+	want_files := (*files)[initNumber:lastNumber]
+	var (
+		wg    sync.WaitGroup
+		mutex sync.Mutex
+	)
+	wg.Add(1)
+	go AuthSearchFileSupplyGetFilesFunc(&wg, &mutex, &want_files, file_datas)
+	wg.Wait()
+
+	return nil
+}
+
+func AuthSearchFileSupplyGetFilesFunc(wg *sync.WaitGroup, mutex *sync.Mutex, want_files *[]models.File, file_datas *[]dtos.FileDataDto) {
+	defer wg.Done()
+
+	for _, want_file := range *want_files {
+		var (
+			file_data dtos.FileDataDto
+		)
+		mutex.Lock()
+		file_data.File_id = want_file.File_id
+		file_data.File_name = want_file.File_title
+		file_data.File_comment = want_file.File_commnet
+		*file_datas = append(*file_datas, file_data)
 		mutex.Unlock()
 	}
 

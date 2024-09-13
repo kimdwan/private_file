@@ -123,5 +123,38 @@ func AuthGetFileListController(ctx *gin.Context) {
 
 // 파일을 검색해서 가져오기
 func AuthSearchFileController(ctx *gin.Context) {
+	var (
+		payload          *dtos.Payload
+		fileSearchDto    *dtos.FileSearchNameDto
+		file_datas       []dtos.FileDataDto
+		totalFileNumbers int
+		errorStatus      int
+		err              error
+	)
 
+	// payload 값 가져오기
+	if payload, err = services.AuthParsePayloadByteService(ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// 파일 검색 후 가져오기
+	if fileSearchDto, err = services.AuthParseAndBodyService[dtos.FileSearchNameDto](ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// 파일 리스트 가져오가
+	if errorStatus, err = services.AuthSearchFileService(payload, fileSearchDto, &file_datas, &totalFileNumbers); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"file_datas":   file_datas,
+		"total_number": totalFileNumbers,
+	})
 }

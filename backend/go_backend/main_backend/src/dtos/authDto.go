@@ -13,3 +13,9 @@ type FileDataDto struct {
 type FileNumberDto struct {
 	File_number int `json:"file_number" validate:"number,min=1,required"`
 }
+
+// 파일 검색한 후 순서를 가져오는 데이터
+type FileSearchNameDto struct {
+	File_title  string `json:"file_title" validate:"required"`
+	File_number int    `json:"file_number" validate:"required,min=1,required"`
+}
