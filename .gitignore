@@ -2,5 +2,10 @@
 
 backend/go_backend/main_backend/.env
 
+# react_frontend
+frontend/react_frontend/main_frontend/node_modules
+frontend/react_frontend/main_frontend/dist
+frontend/react_frontend/main_frontend/build
+frontend/react_frontend/main_frontend/.env
 # etc
 file_server
