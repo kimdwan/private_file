@@ -1,0 +1,98 @@
+/* 전체 로그인 컨테이너 */
+.loginContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f4f4f9;
+}
+
+/* 로그인 로고 컨테이너 */
+.loginLogoContainer {
+  margin-bottom: 20px;
+}
+
+.loginLogoImage {
+  width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* 로그인 폼 컨테이너 */
+.loginFormContainer {
+  background-color: #fff;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.loginFormEmailDivBox, 
+.loginFormPasswordDivBox {
+  margin-bottom: 20px;
+}
+
+.loginFormEmailLabel, 
+.loginFormPasswordLabel {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.loginFormEmailInput,
+.loginFormPasswordInput {
+  width: 100%;
+  max-width: 200px; /* 인풋 박스 크기 조절 */
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.loginFormErrorMsg {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* 로그인 버튼 */
+.loginFormSubmitButton {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.loginFormSubmitInputButton {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+  cursor: pointer;
+}
+
+.loginFormSubmitInputButton:hover {
+  background-color: #555;
+}
+
+/* 로그인 푸터 */
+.loginFooterContainer {
+  margin-top: 20px;
+}
+
+.loginFooterGoUrlBoxButton {
+  font-size: 14px;
+  color: red;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.loginFooterGoUrlBoxButton:hover {
+  text-decoration: underline;
+}
