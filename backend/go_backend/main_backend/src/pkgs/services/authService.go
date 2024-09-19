@@ -759,3 +759,65 @@ func AuthRemoveFileDeleteFunc(c context.Context, db *gorm.DB, file *models.File)
 
 	return nil
 }
+
+// 유저를 로그아웃 해줌
+func AuthLogoutService(ctx *gin.Context, payload *dtos.Payload) (int, error) {
+	var (
+		db          *gorm.DB = settings.DB
+		user        models.User
+		errorStatus int
+		err         error
+	)
+	c, cancel := context.WithTimeout(context.Background(), time.Second*100)
+	defer cancel()
+
+	// 유저 정보를 찾음
+	if errorStatus, err = AuthLogoutFindUserFunc(c, db, payload, &user); err != nil {
+		return errorStatus, err
+	}
+
+	// 정보 업데이트
+	if err = AuthLogoutRemoveJwtTokenFunc(c, ctx, db, &user); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return 0, nil
+}
+
+// 유저 정보를 찾음
+func AuthLogoutFindUserFunc(c context.Context, db *gorm.DB, payload *dtos.Payload, user *models.User) (int, error) {
+
+	// 데이터 찾음
+	result := db.WithContext(c).Where("user_id = ?", payload.User_id).First(user)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return http.StatusUnauthorized, errors.New("유저의 정보를 찾을수 없습니다 다시 로그인해주세요")
+		} else {
+			fmt.Println("시스템 오류: ", result.Error.Error())
+			return http.StatusInternalServerError, errors.New("데이터 베이스에서 유저 정보를 찾는데 오류가 발생했습니다")
+		}
+	}
+
+	return 0, nil
+}
+
+// 유저의 정보를 업로드하고 정리함
+func AuthLogoutRemoveJwtTokenFunc(c context.Context, ctx *gin.Context, db *gorm.DB, user *models.User) error {
+
+	// 유저 정보부터 삭제
+	user.Access_token = nil
+	user.Refresh_token = nil
+	user.Computer_number = nil
+
+	// 유저 정보 업데이트
+	if result := db.WithContext(c).Save(user); result.Error != nil {
+		fmt.Println("시스템 오류: ", result.Error.Error())
+		return errors.New("유저의 정보를 업로드 하는데 오류가 발생했습니다")
+	}
+
+	// 쿠키 보내기
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie("Authorization", "", 24*60*60, "", "", false, true)
+	return nil
+}

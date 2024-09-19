@@ -266,3 +266,32 @@ func AuthRemoveFileController(ctx *gin.Context) {
 		"message": "파일이 삭제되었습니다.",
 	})
 }
+
+// 로그아웃
+func AuthLogoutController(ctx *gin.Context) {
+
+	var (
+		payload     *dtos.Payload
+		errorStatus int
+		err         error
+	)
+
+	// payload 파싱하기
+	if payload, err = services.AuthParsePayloadByteService(ctx); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// 로그아웃 시키기
+	if errorStatus, err = services.AuthLogoutService(ctx, payload); err != nil {
+		fmt.Println(err.Error())
+		ctx.AbortWithStatus(errorStatus)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "로그아웃 되었습니다.",
+	})
+
+}
