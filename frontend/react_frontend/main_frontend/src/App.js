@@ -1,5 +1,5 @@
 import { BrowserRouter as Routers, Routes, Route } from "react-router-dom"
-import { Main } from "./pkgs";
+import { Main, Error } from "./pkgs";
 import { createContext } from "react";
 import { LoadComputerNumber } from "./settings";
 
@@ -14,6 +14,7 @@ function App() {
         <Routers>
           <Routes>
             <Route path = "/" element = {<Main />} />
+            <Route path = "*" element = {<Error />} />
           </Routes>
         </Routers>
       </MainContext.Provider>
