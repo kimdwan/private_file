@@ -1,5 +1,5 @@
 import { BrowserRouter as Routers, Routes, Route } from "react-router-dom"
-import { Main, Error } from "./pkgs";
+import { Main, Error, SignUp } from "./pkgs";
 import { createContext } from "react";
 import { LoadComputerNumber } from "./settings";
 
@@ -14,6 +14,7 @@ function App() {
         <Routers>
           <Routes>
             <Route path = "/" element = {<Main />} />
+            <Route path="/signup/*" element = {<SignUp />} />
             <Route path = "*" element = {<Error />} />
           </Routes>
         </Routers>

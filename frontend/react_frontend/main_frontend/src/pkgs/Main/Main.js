@@ -1,6 +1,3 @@
-// css
-import "./assets/css/Main.css"
-
 // 컴퍼넌트
 import { User, Login } from "./components"
 import { MainContext } from "../../App"

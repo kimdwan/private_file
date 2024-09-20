@@ -6,7 +6,7 @@ export const useLoginGoUrlHook = () => {
 
   const clickGoSignUpBtn = useCallback((event) => {
     if (event.target.className === "loginFooterGoUrlBoxButton") {
-      navigate("/signup")
+      navigate("/signup/term")
     }
 
   }, [ navigate ])
