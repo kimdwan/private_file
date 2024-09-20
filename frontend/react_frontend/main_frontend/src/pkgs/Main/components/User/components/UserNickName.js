@@ -1,9 +1,13 @@
+import { useUserNickNameHook } from "../hooks"
 
+export const UserNickName = ({ computerNumber, setComputerNumber }) => {
+  const { userNickName } = useUserNickNameHook(computerNumber, setComputerNumber)
 
-export const UserNickName = () => {
   return (
     <div className = "userNickNameContainer">
-      유저 닉네임
+      {
+        userNickName
+      }
     </div>
   )
 }

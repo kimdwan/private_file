@@ -1,98 +1,151 @@
-/* 전체 로그인 컨테이너 */
+/* Login.css */
+
+/* 로그인 컨테이너 */
 .loginContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f4f4f9;
+  background-color: #f5f5f5;
+  padding: 20px;
 }
 
 /* 로그인 로고 컨테이너 */
 .loginLogoContainer {
-  margin-bottom: 20px;
+  margin-bottom: 40px;
 }
 
 .loginLogoImage {
-  width: 200px;
+  width: 150px;
   height: auto;
-  display: block;
-  margin: 0 auto;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.loginLogoImage:hover {
+  transform: scale(1.05);
 }
 
 /* 로그인 폼 컨테이너 */
 .loginFormContainer {
-  background-color: #fff;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  width: 300px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  background-color: #ffffff;
+  padding: 30px 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.loginFormEmailDivBox, 
+.loginFormContainer form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 이메일 입력 필드 */
+.loginFormEmailDivBox,
 .loginFormPasswordDivBox {
   margin-bottom: 20px;
 }
 
-.loginFormEmailLabel, 
+.loginFormEmailSmallBox,
+.loginFormPasswordSmallBox {
+  display: flex;
+  flex-direction: column;
+}
+
+.loginFormEmailLabel,
 .loginFormPasswordLabel {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333333;
 }
 
 .loginFormEmailInput,
 .loginFormPasswordInput {
-  width: 100%;
-  max-width: 200px; /* 인풋 박스 크기 조절 */
   padding: 10px;
-  border: 2px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  transition: border-color 0.3s ease;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.loginFormEmailInput:focus,
+.loginFormPasswordInput:focus {
+  border-color: #007BFF;
+  outline: none;
+}
+
+/* 오류 메시지 */
+.loginFormEmailErrorBox,
+.loginFormPasswordErrorBox {
+  margin-top: 5px;
 }
 
 .loginFormErrorMsg {
-  color: red;
-  font-size: 12px;
-  margin-top: 5px;
+  color: #ff4d4f;
+  font-size: 14px;
 }
 
 /* 로그인 버튼 */
 .loginFormSubmitButton {
   text-align: center;
-  margin-top: 20px;
 }
 
 .loginFormSubmitInputButton {
-  padding: 10px 20px;
-  font-size: 16px;
+  width: 100%;
+  padding: 12px;
+  background-color: #007BFF;
   border: none;
-  border-radius: 5px;
-  background-color: #333;
-  color: #fff;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 16px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .loginFormSubmitInputButton:hover {
-  background-color: #555;
+  background-color: #0056b3;
 }
 
-/* 로그인 푸터 */
+/* 로그인 푸터 컨테이너 */
 .loginFooterContainer {
-  margin-top: 20px;
+  margin-top: 30px;
+}
+
+.loginFooterGoUrlBox {
+  text-align: center;
 }
 
 .loginFooterGoUrlBoxButton {
-  font-size: 14px;
-  color: red;
   background: none;
   border: none;
+  color: #007BFF;
+  font-size: 16px;
   cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.3s ease;
 }
 
 .loginFooterGoUrlBoxButton:hover {
-  text-decoration: underline;
+  color: #0056b3;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 480px) {
+  .loginFormContainer {
+    padding: 20px;
+  }
+
+  .loginLogoImage {
+    width: 120px;
+  }
+
+  .loginFormSubmitInputButton {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .loginFooterGoUrlBoxButton {
+    font-size: 14px;
+  }
 }

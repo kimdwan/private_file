@@ -1,9 +1,16 @@
+import { useUserGoMainUrlHook } from "../hooks"
 
 
-export const UserGoMain = () => {
+export const UserGoMain = ({ computerNumber, setComputerNumber }) => {
+  const { clickUserGoMainBtn } = useUserGoMainUrlHook(computerNumber, setComputerNumber)
+
   return (
     <div className = "userGoMainContainer">
-      유저 메인 페이지로 가는 장소
+      {/* 메인 화면과 로그아웃으로 이동하게 해줌 */}
+      <div className = "userGoMainSmallBox">
+        <button className = "userGoMainMainBtn" onClick = { clickUserGoMainBtn }>메인</button>
+        <button className = "userGoMainLogoutBtn" onClick = { clickUserGoMainBtn }>로그아웃</button>
+      </div>
     </div>
   )
 }

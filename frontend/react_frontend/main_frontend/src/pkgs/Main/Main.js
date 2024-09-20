@@ -14,7 +14,7 @@ export const Main = () => {
   return (
     <div>
       {
-        computerNumber ? <User computerNumber = { computerNumber } /> : <Login setComputerNumber = { setComputerNumber } />
+        computerNumber ? <User computerNumber = { computerNumber } setComputerNumber = { setComputerNumber } /> : <Login setComputerNumber = { setComputerNumber } />
       }
     </div>
   )
